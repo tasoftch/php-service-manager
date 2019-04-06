@@ -23,6 +23,8 @@
 
 namespace TASoft\Service;
 
+use TASoft\Service\Exception\ServiceException;
+
 /**
  * The service manager reads from a configuration the registered services and instantiate them on demand.
  *
@@ -32,5 +34,39 @@ namespace TASoft\Service;
  */
 class ServiceManager
 {
+    private static $serviceManager;
 
+    private $serviceData = [];
+    private $selfReferenceNames = [
+        'serviceManager',
+        "SERVICES"
+    ];
+
+    /**
+     * Returns the service manager. The first call of this method should pass a service config info.
+     * @param iterable|NULL $serviceConfig
+     * @return ServiceManager
+     */
+    public static function generalServiceManager(Iterable $serviceConfig = NULL, $selfRefNames= []) {
+        if(!static::$serviceManager) {
+            if(is_null($serviceConfig))
+                throw new ServiceException(sprintf("First call of %s must pass a service configuration", __METHOD__), 13);
+
+            /** @var ServiceManager $man */
+            $man = static::$serviceManager = new static($serviceConfig);
+            $man->selfReferenceNames = array_merge($man->selfReferenceNames, $selfRefNames);
+        }
+        return static::$serviceManager;
+    }
+
+    public static function rejectGeneralServiceManager() {
+        static::$serviceManager = NULL;
+    }
+
+    public function __construct(Iterable $config) {
+        foreach($config as $serviceName => $serviceConfig) {
+            $container = new ServiceContainer($serviceName, $serviceConfig, $this);
+            $this->set($serviceName, $container);
+        }
+    }
 }
