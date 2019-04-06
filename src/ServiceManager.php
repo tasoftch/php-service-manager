@@ -35,6 +35,7 @@ use TASoft\Service\Exception\ServiceException;
 class ServiceManager
 {
     private static $serviceManager;
+    private static $globalVariableName = "SERVICES";
 
     private $serviceData = [];
     private $selfReferenceNames = [
@@ -55,12 +56,17 @@ class ServiceManager
             /** @var ServiceManager $man */
             $man = static::$serviceManager = new static($serviceConfig);
             $man->selfReferenceNames = array_merge($man->selfReferenceNames, $selfRefNames);
+
+            if($n = self::getGlobalVariableName())
+                $GLOBALS[$n] = $man;
         }
         return static::$serviceManager;
     }
 
     public static function rejectGeneralServiceManager() {
         static::$serviceManager = NULL;
+        if($n = self::getGlobalVariableName())
+            unset($GLOBALS[$n]);
     }
 
     public function __construct(Iterable $config) {
@@ -68,5 +74,21 @@ class ServiceManager
             $container = new ServiceContainer($serviceName, $serviceConfig, $this);
             $this->set($serviceName, $container);
         }
+    }
+
+    /**
+     * @return string
+     */
+    public static function getGlobalVariableName(): string
+    {
+        return self::$globalVariableName;
+    }
+
+    /**
+     * @param string $globalVariableName
+     */
+    public static function setGlobalVariableName(string $globalVariableName): void
+    {
+        self::$globalVariableName = $globalVariableName;
     }
 }
