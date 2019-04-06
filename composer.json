@@ -13,7 +13,8 @@
     }
   },
   "require" : {
-    "php": "^7"
+    "php": "^7",
+    "tasoft/config": "dev-master"
   },
   "require-dev": {
     "phpunit/phpunit": "^6"
