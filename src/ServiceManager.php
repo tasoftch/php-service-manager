@@ -91,4 +91,22 @@ class ServiceManager
     {
         self::$globalVariableName = $globalVariableName;
     }
+
+    /**
+     * This method should be used to create service instances. It will check implementations and create it the requested manner.
+     *
+     * @param string $className
+     * @param array|iterable|null $arguments
+     * @param array|iterable|null $configuration
+     * @return object|null
+     */
+    public function makeServiceInstance(string $className, $arguments = NULL, $configuration = NULL) {
+        $instance = NULL;
+
+
+
+        if($configuration && method_exists($instance, 'setConfiguration'))
+            $instance->setConfiguration($configuration);
+        return $instance;
+    }
 }

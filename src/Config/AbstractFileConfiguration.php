@@ -26,20 +26,35 @@ namespace TASoft\Service\Config;
 /**
  * The configuration is build like
  *      "serviceName" => [
- *          'class|factory|file' => ... The class name, factory class name or a file name to receive the instance.
+ *          'container|factory|file' => ... The class name, container class name or a file name to receive the instance.
  *          'arguments' => [...] an index based array for passing arguments to the service/factory constructor.
  *                                  In case of file construction the arguments are passed as $ARGUMENTS
- *          'configuration' => [...] a key value based array containig configurations passed after creation
+ *          'configuration' => [...] a key value based array containing configurations passed after creation
  *                                      using the setConfiguration() method if available.
  *      ]
  * @package TASoft\Service\Config
  */
 abstract class AbstractFileConfiguration
 {
+    /**
+     * One of these three keys must be available in a service config set to specify how the instance should be loaded
+     */
+
+    /** @var string Load directly by class name */
     const SERVICE_CLASS = 'class';
-    const SERVICE_FACTORY = 'factory';
+
+    /** @var string Load a container and this will provide the service instance */
+    const SERVICE_CONTAINER = 'container';
+
+    /** @var string Execute a file and its return value is the instance */
     const SERVICE_FILE = 'file';
 
+    /** @var string Arguments passed to the service instance constructor */
     const SERVICE_INIT_ARGUMENTS = 'arguments';
+
+    /** @var string Configuration set by setConfiguration method of instantiated service if available */
     const SERVICE_INIT_CONFIGURATION = 'configuration';
+
+    /** @var string In case of containers, declare of which class name the service instance will be. */
+    const CONFIG_SERVICE_TYPE_KEY = 'type';
 }
