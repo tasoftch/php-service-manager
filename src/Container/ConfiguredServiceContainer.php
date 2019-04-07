@@ -56,6 +56,20 @@ class ConfiguredServiceContainer extends AbstractContainer
         $this->serviceName = $serviceName;
         $this->serviceManager = $serviceManager ?: ServiceManager::generalServiceManager();
         $this->setConfiguration($serviceConfiguration);
+
+        // Check, if the service will be instantiable
+        if(
+            !array_key_exists(AbstractFileConfiguration::SERVICE_CLASS, $serviceConfiguration) &&
+            !array_key_exists(AbstractFileConfiguration::SERVICE_CONTAINER, $serviceConfiguration) &&
+            !array_key_exists(AbstractFileConfiguration::SERVICE_FILE, $serviceConfiguration)
+        ) {
+            $keys = implode("|", [AbstractFileConfiguration::SERVICE_CLASS, AbstractFileConfiguration::SERVICE_CONTAINER, AbstractFileConfiguration::SERVICE_FILE]);
+
+            $e = new BadConfigurationException("Can not instantiate service $this->serviceName. Missing $keys key");
+            $e->setConfiguration($serviceConfiguration);
+            $e->setServiceName($this->serviceName);
+            throw $e;
+        }
     }
 
     /**
@@ -96,13 +110,7 @@ class ConfiguredServiceContainer extends AbstractContainer
             $this->loadInstanceFromFile($class);
             return true;
         }
-
-        $keys = implode("|", [AbstractFileConfiguration::SERVICE_CLASS, AbstractFileConfiguration::SERVICE_CONTAINER, AbstractFileConfiguration::SERVICE_FILE]);
-
-        $e = new BadConfigurationException("Can not instantiate service $this->serviceName. Missing $keys key");
-        $e->setConfiguration($config);
-        $e->setServiceName($this->serviceName);
-        throw $e;
+        return false;
     }
 
     /**
