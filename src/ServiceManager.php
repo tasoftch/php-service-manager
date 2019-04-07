@@ -23,7 +23,17 @@
 
 namespace TASoft\Service;
 
+use TASoft\Collection\Mapping\CallbackMapper;
+use TASoft\Collection\Mapping\CollectionMapping;
+use TASoft\Collection\Mapping\RecursiveCallbackMapper;
+use TASoft\PHP\SignatureService;
+use TASoft\Service\Config\AbstractFileConfiguration;
+use TASoft\Service\Container\CallbackContainer;
+use TASoft\Service\Container\ConfiguredServiceContainer;
+use TASoft\Service\Container\ContainerInterface;
+use TASoft\Service\Container\StaticContainer;
 use TASoft\Service\Exception\ServiceException;
+use TASoft\Service\Exception\UnknownServiceException;
 
 /**
  * The service manager reads from a configuration the registered services and instantiate them on demand.
@@ -38,6 +48,11 @@ class ServiceManager
     private static $globalVariableName = "SERVICES";
 
     private $serviceData = [];
+    private $parameters = [];
+    private $serviceClassNames = [];
+
+    private $replaceExistingServices = false;
+
     private $selfReferenceNames = [
         'serviceManager',
         "SERVICES"
@@ -70,10 +85,18 @@ class ServiceManager
     }
 
     public function __construct(Iterable $config) {
+        $initializeOnLoad = [];
+
         foreach($config as $serviceName => $serviceConfig) {
-            $container = new ServiceContainer($serviceName, $serviceConfig, $this);
+            $container = new ConfiguredServiceContainer($serviceName, $serviceConfig, $this);
+            if($serviceConfig[AbstractFileConfiguration::CONFIG_SERVICE_INIT_ON_LOAD_KEY] ?? false)
+                $initializeOnLoad[] = $serviceName;
+
             $this->set($serviceName, $container);
         }
+
+        foreach($initializeOnLoad as $serviceName)
+            $this->get($serviceName);
     }
 
     /**
@@ -93,6 +116,220 @@ class ServiceManager
     }
 
     /**
+     * Returns a list with all available services
+     * @return array
+     */
+    public function getAvailableServices() {
+        return array_keys($this->serviceData);
+    }
+
+    /**
+     * You may directly request a service instance. If it does not exist, the request returns NULL
+     *
+     *
+     * @param $serviceName
+     * @return object|null
+     * @see ServiceManager::get()
+     */
+    public function __get($serviceName) {
+        try {
+            return $this->get($serviceName);
+        } catch (ServiceException $e) {
+        }
+        return NULL;
+    }
+
+
+    /**
+     * Returns the instance of a requested service
+     * This method call fails if the service does not exist or something else went wrong during creating the service instance.
+     *
+     * @param string $serviceName
+     * @return object|null
+     * @throws UnknownServiceException
+     */
+    public function get($serviceName) {
+        $container = $this->serviceData[$serviceName] ?? NULL;
+        if($container) {
+            return $container->getInstance();
+        }
+
+        if(in_array($serviceName, $this->getSelfReferenceNames()))
+            return $this;
+
+        $e = new UnknownServiceException("Service $serviceName is not registered", E_USER_ERROR);
+        $e->setServiceName($serviceName);
+        throw $e;
+    }
+
+    /**
+     * Dynamically register a new service.
+     * Directly registered services ignore all warnings during registration.
+     *
+     * @param $serviceName
+     * @param $object
+     * @see ServiceManager::set()
+     */
+    public function __set($serviceName, $object) {
+        @$this->set($serviceName, $object);
+    }
+
+    /**
+     * Sets a service
+     *
+     * Accepted are:
+     * - Objects that implement ContainerInterface, their getInstance method call will be the service instance
+     * - A callback (note! Objects implementing __invoke are also callbacks!) to obtain the service instance
+     * - An array to load configured service
+     * - Any other object directly as service
+     *
+     * If replaceExistingServices() returns false, this method call fails with an already registered service.
+     *
+     *
+     * @param string $serviceName
+     * @param object|callable|ContainerInterface $object
+     * @throws ServiceException
+     * @see ServiceManager::replaceExistingServices()
+     * @see ServiceManager::__get()
+     */
+    public function set(string $serviceName, $object) {
+        if(isset($this->serviceData[$serviceName]) || in_array($serviceName, $this->getSelfReferenceNames())) {
+            if($this->replaceExistingServices()) {
+                trigger_error("Service $serviceName is already registered", E_USER_NOTICE);
+            } else {
+                $e = new ServiceException("Service $serviceName is already registered");
+                $e->setServiceName($serviceName);
+                throw $e;
+            }
+        }
+
+
+        if(is_callable($object)) {
+            $object = new CallbackContainer($object);
+        } elseif (is_array($object)) {
+            $object = new ConfiguredServiceContainer($serviceName, $object, $this);
+        } elseif(!is_object($object)) {
+            throw new ServiceException("Service Manager only allows objects to be service instances!");
+        } elseif(!($object instanceof ContainerInterface)) {
+            $object = new StaticContainer($object);
+        }
+
+        $this->serviceData[$serviceName] = $object;
+    }
+
+    /**
+     * Looks, if a service with the given name is available
+     * @param string $serviceName
+     * @return bool
+     */
+    public function serviceExists(string $serviceName): bool {
+        return isset($this->serviceData[$serviceName]) || in_array($serviceName, $this->getSelfReferenceNames()) ? true : false;
+    }
+
+    /**
+     * Looks, if a service with the given name is available and already is loaded.
+     * @param string $serviceName
+     * @return bool
+     * @see ServiceManager::serviceExists()
+     */
+    public function isServiceLoaded(string $serviceName): bool {
+        if($this->serviceExists($serviceName)) {
+            if(in_array($serviceName, $this->getSelfReferenceNames()))
+                return true;
+
+            /** @var ContainerInterface $container */
+            $container = $this->serviceData[$serviceName];
+            return $container->isInstanceLoaded();
+        }
+        return false;
+    }
+
+    /**
+     * Self references are names that reference the service manager itself.
+     *
+     * @return array
+     */
+    public function getSelfReferenceNames(): array
+    {
+        return $this->selfReferenceNames;
+    }
+
+    /**
+     * @param array $selfReferenceNames
+     */
+    public function setSelfReferenceNames(array $selfReferenceNames): void
+    {
+        $this->selfReferenceNames = $selfReferenceNames;
+    }
+
+    /**
+     * Parameters can be dynamic markers in the configuration that are resolved right before the service instance is required.
+     * @example Config [
+     *      AbstractFileConfiguration::SERVICE_CLASS            => MySQL::class,
+     *      AbstractFileConfiguration::SERVICE_INIT_ARGUMENTS   => [
+     *          'host' => 'localhost',
+     *          'dbname' => '%dataBaseName%'
+     *      ]
+     * ]
+     * This configuration is valid and the %dataBaseName% parameter placeholder gets replaced by the parameter entry on service instance initialisation.
+     *
+     * @param string $paramName
+     * @param null $paramValue
+     */
+    public function setParameter(string $paramName, $paramValue = NULL) {
+        if($paramName) {
+            if(is_null($paramValue) && isset($this->parameters[$paramName]))
+                unset($this->parameters[$paramName]);
+            else
+                $this->parameters[$paramName] = $paramValue;
+        }
+    }
+
+    /**
+     * Returns the requested parameter value. If not set, the $contained argument is set to false, otherwise true
+     *
+     * @param string $name
+     * @param bool $contained
+     * @return mixed|null
+     */
+    public function getParameter(string $name, bool &$contained = false) {
+        if(isset($this->parameters[$name])) {
+            $contained = true;
+            return $this->parameters[$name];
+        }
+        $contained = false;
+        return NULL;
+    }
+
+
+    /**
+     * Maps a given array into and resolves all markers /^\\$([a-zA-Z_][a-zA-Z_0-9]*)$/
+     * with the expected service instance
+     *
+     * @param iterable $array
+     * @param bool $recursive
+     * @return iterable
+     */
+    public function mapArray( $array, bool $recursive = false): array {
+        $handler = function($key, $value) {
+            if(is_string($value) && preg_match("/^%(.*?)%$/i", $value, $ms)) {
+                $value = $this->getParameter($ms[1]);
+            }
+
+            if(is_string($value) && preg_match("/^\\$([a-z_][a-z_0-9]*)$/i", $value, $ms)) {
+                $name = $ms[1];
+                if($this->serviceExists($name))
+                    return $this->get($name);
+            }
+            return $value;
+        };
+
+        $mapper = $recursive ? new RecursiveCallbackMapper($handler) : new CallbackMapper($handler);
+        $mapping = new CollectionMapping($mapper);
+        return $mapping->mapCollection($array);
+    }
+
+    /**
      * This method should be used to create service instances. It will check implementations and create it the requested manner.
      *
      * @param string $className
@@ -103,10 +340,94 @@ class ServiceManager
     public function makeServiceInstance(string $className, $arguments = NULL, $configuration = NULL) {
         $instance = NULL;
 
+        $implInterfaces = class_implements($className);
+        if(in_array(ConstructorAwareServiceInterface::class, $implInterfaces)) {
+            /** @var ConstructorAwareServiceInterface $className */
+            if($args = $className::getConstructorArguments()) {
+                $newArguments = [];
 
+                foreach($args as $argName => $argValue) {
+                    $newArguments[] = is_null($argValue) ? ($arguments[$argName] ?? NULL) : $argValue;
+                }
+
+                $arguments = $newArguments;
+            }
+        }
+
+        if($arguments)
+            $arguments = $this->mapArray($arguments, true);
+
+        if(in_array(StaticConstructorServiceInterface::class, $implInterfaces)) {
+            $instance = new $className($arguments, $this);
+        } elseif (in_array(DynamicConstructorServiceInterface::class, $implInterfaces)) {
+            $sig = SignatureService::getSignatureService()->getMethodSignature($className, "__construct");
+            $args = [];
+            foreach($sig as $name => $type) {
+
+            }
+            $instance = new $className(...$args);
+        } else {
+            $instance = new $className(...$arguments);
+        }
 
         if($configuration && method_exists($instance, 'setConfiguration'))
             $instance->setConfiguration($configuration);
         return $instance;
+    }
+
+    /**
+     * @return bool
+     */
+    public function replaceExistingServices(): bool
+    {
+        return $this->replaceExistingServices;
+    }
+
+    /**
+     * @param bool $replaceExistingServices
+     */
+    public function setReplaceExistingServices(bool $replaceExistingServices): void
+    {
+        $this->replaceExistingServices = $replaceExistingServices;
+    }
+
+    /**
+     * Gets the class of a service instance
+     *
+     * @param string $serviceName
+     * @param bool $forced      // If set, it will until load the service to get its class name
+     * @return string|null
+     */
+    public function getServiceClass(string $serviceName, bool $forced = true): ?string {
+        if(!isset($this->serviceClassNames[$serviceName])) {
+            if($this->serviceExists($serviceName)) {
+                /** @var ContainerInterface $container */
+                $container = $this->serviceData[$serviceName];
+
+                if($container instanceof ConfiguredServiceContainer) {
+                    $cfg = $container->getConfiguration();
+                    // In case of a direct instance fonciguration, get this classname
+                    if($cn = $cfg[AbstractFileConfiguration::SERVICE_CLASS] ?? NULL) {
+                        $this->serviceClassNames[$serviceName] = $cn;
+                        goto finish;
+
+                    } elseif($cn = $cfg[AbstractFileConfiguration::CONFIG_SERVICE_TYPE_KEY] ?? NULL) {
+                        // If the developer defined the class by configuration in case of container or file initialisation, use this.
+                        $this->serviceClassNames[$serviceName] = $cn;
+                        goto finish;
+                    }
+                }
+
+                // If nothing worked before, finally load the instance
+                if($container->isInstanceLoaded() || $forced)
+                    $this->serviceClassNames[$serviceName] = get_class( $container->getInstance() );
+            } else {
+                $this->serviceClassNames[$serviceName] = false;
+            }
+        }
+
+        finish:
+
+        return $this->serviceClassNames[$serviceName] ?: NULL;
     }
 }

@@ -32,6 +32,19 @@ namespace TASoft\Service\Config;
  *          'configuration' => [...] a key value based array containing configurations passed after creation
  *                                      using the setConfiguration() method if available.
  *      ]
+ *
+ * Note that arguments and configuration may reference other services:
+ * [
+ *   ...,
+ *   'otherService' => '$serviceName' // Note the $ sign!
+ * ]
+ * or parameters, which can be passed to the service manager and resolved right before instantiation of a service instance:
+ * [
+ *   ...,
+ *   'dnmane' => '%dataBaseName%' // Note the leading and trailing % sign!
+ * ]
+ *
+ *
  * @package TASoft\Service\Config
  */
 abstract class AbstractFileConfiguration
@@ -57,4 +70,7 @@ abstract class AbstractFileConfiguration
 
     /** @var string In case of containers, declare of which class name the service instance will be. */
     const CONFIG_SERVICE_TYPE_KEY = 'type';
+
+    /** @var string If set and TRUE, the service is initialized right after loading the configuration */
+    const CONFIG_SERVICE_INIT_ON_LOAD_KEY = 'init';
 }

@@ -48,6 +48,7 @@ class ConfiguredServiceContainer extends AbstractContainer
     /**
      * AbstractConfiguratedContainer constructor.
      * @param string $serviceName
+     * @param array $serviceConfiguration
      * @param ServiceManager $serviceManager
      */
     public function __construct(string $serviceName, $serviceConfiguration = [], ServiceManager $serviceManager = NULL)

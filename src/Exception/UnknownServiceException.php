@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (c) 2019 TASoft Applications, Th. Abplanalp <info@tasoft.ch>
+ * Copyright (c) 2018 TASoft Applications, Th. Abplanalp <info@tasoft.ch>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,38 +19,14 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ *
+ * @author Thomas Abplanalp <thomas@tasoft.ch>
+ * @license MIT
  */
 
-namespace TASoft\Service;
+namespace TASoft\Service\Exception;
 
-/**
- * Use this interface for services that know about their construction method signature
- * @package TASoft\Service
- */
-interface ConstructorAwareServiceInterface
+
+class UnknownServiceException extends ServiceException
 {
-    /**
-     * Provide an array with the constructor arguments.
-     * The values may contain service references ($serviceName), parameter placeholders (%param%) or be NULL to replace keyed argument with configuration value
-     * @example
-     * Config: [
-     *    'class' => SomeClass::class,
-     *    'arguments' => [
-     *       'A' => 3,
-     *       'C' => 18
-     *    ]
-     * ]
-     * method SomeClass::getConstructorArguments() returns:
-     * [
-     *   '$logService',
-     *   '%fileParameter%',
-     *   '%prefix%-file.txt',
-     *   'C' => NULL            // This argument will be replaced with the config's C => 18 value.
-     * ]
-     *
-     *
-     * Markers like $serviceManager are allowed.
-     * @return array|null
-     */
-    public static function getConstructorArguments(): ?array ;
 }
