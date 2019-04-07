@@ -32,6 +32,7 @@ use TASoft\Service\Container\CallbackContainer;
 use TASoft\Service\Container\ConfiguredServiceContainer;
 use TASoft\Service\Container\ContainerInterface;
 use TASoft\Service\Container\StaticContainer;
+use TASoft\Service\Exception\BadConfigurationException;
 use TASoft\Service\Exception\ServiceException;
 use TASoft\Service\Exception\UnknownServiceException;
 
@@ -88,7 +89,13 @@ class ServiceManager
         $initializeOnLoad = [];
 
         foreach($config as $serviceName => $serviceConfig) {
+            if(!is_iterable($serviceConfig)) {
+                $e = new BadConfigurationException("Invalid service configuration. Require an array with service name as keys and service config as their values");
+                $e->setConfiguration($serviceConfig);
+                throw $e;
+            }
             $container = new ConfiguredServiceContainer($serviceName, $serviceConfig, $this);
+
             if($serviceConfig[AbstractFileConfiguration::CONFIG_SERVICE_INIT_ON_LOAD_KEY] ?? false)
                 $initializeOnLoad[] = $serviceName;
 
@@ -403,6 +410,10 @@ class ServiceManager
             if($this->serviceExists($serviceName)) {
                 /** @var ContainerInterface $container */
                 $container = $this->serviceData[$serviceName];
+                if($container->isInstanceLoaded()) {
+                    $this->serviceClassNames[$serviceName] = get_class( $container->getInstance() );
+                    goto finish;
+                }
 
                 if($container instanceof ConfiguredServiceContainer) {
                     $cfg = $container->getConfiguration();
@@ -419,7 +430,7 @@ class ServiceManager
                 }
 
                 // If nothing worked before, finally load the instance
-                if($container->isInstanceLoaded() || $forced)
+                if($forced)
                     $this->serviceClassNames[$serviceName] = get_class( $container->getInstance() );
             } else {
                 $this->serviceClassNames[$serviceName] = false;
@@ -429,5 +440,40 @@ class ServiceManager
         finish:
 
         return $this->serviceClassNames[$serviceName] ?: NULL;
+    }
+
+
+    /**
+     * Yields all services that match required service names or required class names.
+     *
+     * @param array $serviceNames
+     * @param array $classNames
+     * @param bool $includeSubclasses
+     * @param bool $forceClassDetection
+     * @return \Generator
+     */
+    public function yieldServices(array $serviceNames, array $classNames, bool $includeSubclasses = true, bool $forceClassDetection = true) {
+
+        $matchClass = function($className) use ($includeSubclasses, $classNames) {
+            if(in_array($className, $classNames))
+                return true;
+            if($includeSubclasses) {
+                foreach($classNames as $cn) {
+                    if(is_subclass_of($className, $cn))
+                        return true;
+                }
+            }
+            return false;
+        };
+
+        /**
+         * @var string $serviceName
+         * @var ContainerInterface $container
+         */
+        foreach($this->serviceData as $serviceName => $container) {
+            if(in_array($serviceName, $serviceNames) || $matchClass($this->getServiceClass($serviceName, $forceClassDetection))) {
+                yield $serviceName => $container->getInstance();
+            }
+        }
     }
 }
