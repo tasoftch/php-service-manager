@@ -44,7 +44,7 @@ abstract class AbstractContainer implements ContainerInterface {
     /**
      * Implement this method to finally load the service instance from configuration, environment or what else.
      * After this method call, the instance property of the factory object should hold the service instance.
-     * @return void
+     * @return void|object
      */
     abstract protected function loadInstance();
 
@@ -57,7 +57,9 @@ abstract class AbstractContainer implements ContainerInterface {
      */
     public function getInstance() {
         if(!$this->isInstanceLoaded()) {
-            $this->loadInstance();
+            $inst = $this->loadInstance();
+            if(!$this->instance)
+                $this->instance = $inst;
         }
 		return $this->instance;
 	}

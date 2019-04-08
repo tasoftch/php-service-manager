@@ -31,6 +31,8 @@ use TASoft\Service\Config\AbstractFileConfiguration;
 use TASoft\Service\Container\CallbackContainer;
 use TASoft\Service\Container\ConfiguredServiceContainer;
 use TASoft\Service\Container\ContainerInterface;
+use TASoft\Service\Container\ServiceAwareContainerInterface;
+use TASoft\Service\Container\ServicePromise;
 use TASoft\Service\Container\StaticContainer;
 use TASoft\Service\Exception\BadConfigurationException;
 use TASoft\Service\Exception\ServiceException;
@@ -299,7 +301,7 @@ class ServiceManager
      * @param bool $contained
      * @return mixed|null
      */
-    public function getParameter(string $name, bool &$contained = false) {
+    public function getParameter(string $name, bool &$contained = NULL) {
         if(isset($this->parameters[$name])) {
             $contained = true;
             return $this->parameters[$name];
@@ -319,8 +321,15 @@ class ServiceManager
      */
     public function mapArray( $array, bool $recursive = false): array {
         $handler = function($key, $value) {
-            if(is_string($value) && preg_match("/^%(.*?)%$/i", $value, $ms)) {
-                $value = $this->getParameter($ms[1]);
+            if(is_string($value)) {
+                $value = preg_replace_callback("/%(.*?)%/", function($ms) {
+                    $par = $this->getParameter($ms[1], $contained);
+                    if($contained)
+                        return $par;
+
+                    trigger_error("Parameter $ms[0] not set", E_USER_WARNING);
+                    return "%$ms[1]%";
+                }, $value);
             }
 
             if(is_string($value) && preg_match("/^\\$([a-z_][a-z_0-9]*)$/i", $value, $ms)) {
@@ -374,11 +383,14 @@ class ServiceManager
             }
             $instance = new $className(...$args);
         } else {
-            $instance = new $className(...$arguments);
+            $instance = $arguments ? new $className(...$arguments) : new $className();
         }
 
-        if($configuration && method_exists($instance, 'setConfiguration'))
+        if($configuration && method_exists($instance, 'setConfiguration')) {
+            $configuration = $this->mapArray($configuration);
             $instance->setConfiguration($configuration);
+        }
+
         return $instance;
     }
 
@@ -415,7 +427,10 @@ class ServiceManager
                     goto finish;
                 }
 
-                if($container instanceof ConfiguredServiceContainer) {
+                if($container instanceof ServiceAwareContainerInterface) {
+                    $this->serviceClassNames[$serviceName] = $container->getServiceClass();
+                    goto finish;
+                } elseif($container instanceof ConfiguredServiceContainer) {
                     $cfg = $container->getConfiguration();
                     // In case of a direct instance fonciguration, get this classname
                     if($cn = $cfg[AbstractFileConfiguration::SERVICE_CLASS] ?? NULL) {
@@ -433,6 +448,7 @@ class ServiceManager
                 if($forced)
                     $this->serviceClassNames[$serviceName] = get_class( $container->getInstance() );
             } else {
+                // Mark as not existing
                 $this->serviceClassNames[$serviceName] = false;
             }
         }
@@ -472,8 +488,16 @@ class ServiceManager
          */
         foreach($this->serviceData as $serviceName => $container) {
             if(in_array($serviceName, $serviceNames) || $matchClass($this->getServiceClass($serviceName, $forceClassDetection))) {
-                yield $serviceName => $container->getInstance();
+                yield $serviceName => new ServicePromise(function() use($container) {return $container->getInstance();});
             }
         }
+    }
+
+    public function getServices(array $serviceNames, array $classNames, bool $includeSubclasses = true, bool $forceClassDetection = true) {
+        $services = [];
+        foreach($this->yieldServices($serviceNames, $classNames, $includeSubclasses, $forceClassDetection) as $name => $service) {
+            $services[$name] = $service;
+        }
+        return $services;
     }
 }

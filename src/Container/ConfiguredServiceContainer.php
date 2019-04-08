@@ -171,15 +171,9 @@ class ConfiguredServiceContainer extends AbstractContainer
      */
     protected function loadInstanceFromClass($class) {
         $arguments = $this->getConfiguration() [ AbstractFileConfiguration::SERVICE_INIT_ARGUMENTS ] ?? NULL;
-        $config = $this->getConfiguration() [ AbstractFileConfiguration::SERVICE_INIT_ARGUMENTS ] ?? NULL;
+        $config = $this->getConfiguration() [ AbstractFileConfiguration::SERVICE_INIT_CONFIGURATION ] ?? NULL;
 
-        try {
-            $this->instance = $this->serviceManager->makeServiceInstance($class, $arguments, $config);
-        } catch (\Throwable $e) {
-            $e = new ServiceException($e->getMessage(), $e->getCode(), $e);
-            $e->setServiceName($this->serviceName);
-            throw $e;
-        }
+        $this->instance = $this->serviceManager->makeServiceInstance($class, $arguments, $config);
     }
 
     /**
