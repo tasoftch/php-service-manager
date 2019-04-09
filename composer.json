@@ -19,5 +19,8 @@
   },
   "require-dev": {
     "phpunit/phpunit": "^6"
+  },
+  "suggest": {
+    "tasoft/dependency-injection": "dev-master"
   }
 }
