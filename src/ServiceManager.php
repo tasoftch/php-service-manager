@@ -87,7 +87,7 @@ class ServiceManager
             unset($GLOBALS[$n]);
     }
 
-    public function __construct(Iterable $config) {
+    public function __construct(Iterable $config = []) {
         $initializeOnLoad = [];
 
         foreach($config as $serviceName => $serviceConfig) {
