@@ -320,7 +320,32 @@ class ServiceManager
      * @return iterable
      */
     public function mapArray( $array, bool $recursive = false): array {
-        $handler = function($key, $value) {
+        $handler = $this->_getMapValueHandler();
+        $mapper = $recursive ? new RecursiveCallbackMapper($handler) : new CallbackMapper($handler);
+        $mapping = new CollectionMapping($mapper);
+        return $mapping->mapCollection($array);
+    }
+
+    /**
+     * Maps parameters and service instances in value by the registered ones.
+     * If value is an iterable, the mapping will iterate over it (if $recursive is set, also over children), otherwise it will map the passed value if needed.
+     *
+     * @param $value
+     * @param bool $recursive
+     * @return array|iterable|mixed
+     */
+    public function mapValue($value, bool $recursive = false) {
+        if(is_iterable($value))
+            return $this->mapArray($value, $recursive);
+        return $this->_getMapValueHandler()(NULL, $value);
+    }
+
+    /**
+     * Creates the replacement handler for parameters and service instances
+     * @return \Closure
+     */
+    private function _getMapValueHandler() {
+        return function($key, $value) {
             if(is_string($value)) {
                 $value = preg_replace_callback("/%(.*?)%/", function($ms) {
                     $par = $this->getParameter($ms[1], $contained);
@@ -339,10 +364,6 @@ class ServiceManager
             }
             return $value;
         };
-
-        $mapper = $recursive ? new RecursiveCallbackMapper($handler) : new CallbackMapper($handler);
-        $mapping = new CollectionMapping($mapper);
-        return $mapping->mapCollection($array);
     }
 
     /**
