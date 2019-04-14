@@ -68,6 +68,16 @@ abstract class AbstractFileConfiguration
     /** @var string Configuration set by setConfiguration method of instantiated service if available */
     const SERVICE_INIT_CONFIGURATION = 'configuration';
 
+    /*
+     * NOTE! The main difference between arguments and configuration is that
+     * arguments are ALWAYS transformed into an array with numeric indexes.
+     * The configuration is passed to setConfiguration as is.
+     * So you can use iterable objects as configuration and arguments, but
+     * only in setConfiguration the original objects are injected.
+     * Using StaticConstructorServiceInterface will pass arguments with maintained keys
+     * but also transformed to an array.
+     */
+
     /** @var string In case of containers, declare of which class name the service instance will be. */
     const CONFIG_SERVICE_TYPE_KEY = 'type';
 
