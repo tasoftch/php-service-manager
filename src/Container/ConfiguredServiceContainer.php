@@ -59,9 +59,9 @@ class ConfiguredServiceContainer extends AbstractContainer
 
         // Check, if the service will be instantiable
         if(
-            !array_key_exists(AbstractFileConfiguration::SERVICE_CLASS, $serviceConfiguration) &&
-            !array_key_exists(AbstractFileConfiguration::SERVICE_CONTAINER, $serviceConfiguration) &&
-            !array_key_exists(AbstractFileConfiguration::SERVICE_FILE, $serviceConfiguration)
+            !isset($serviceConfiguration[AbstractFileConfiguration::SERVICE_CLASS]) &&
+            !isset($serviceConfiguration[AbstractFileConfiguration::SERVICE_FILE]) &&
+            !isset($serviceConfiguration[AbstractFileConfiguration::SERVICE_CONTAINER])
         ) {
             $keys = implode("|", [AbstractFileConfiguration::SERVICE_CLASS, AbstractFileConfiguration::SERVICE_CONTAINER, AbstractFileConfiguration::SERVICE_FILE]);
 
