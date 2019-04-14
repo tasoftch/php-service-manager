@@ -34,7 +34,7 @@ class BadContainerException extends ServiceException
     /**
      * @return ContainerInterface
      */
-    public function getContainer(): ContainerInterface
+    public function getContainer(): ?ContainerInterface
     {
         return $this->container;
     }
@@ -42,7 +42,7 @@ class BadContainerException extends ServiceException
     /**
      * @param ContainerInterface $container
      */
-    public function setContainer(ContainerInterface $container): void
+    public function setContainer(?ContainerInterface $container): void
     {
         $this->container = $container;
     }
