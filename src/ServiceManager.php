@@ -57,6 +57,8 @@ class ServiceManager
 
     private $replaceExistingServices = false;
 
+    private $customArgumentHandler = [];
+
     private $selfReferenceNames = [
         'serviceManager',
         "SERVICES"
@@ -104,6 +106,30 @@ class ServiceManager
 
             $this->set($serviceName, $container);
         }
+
+        // Load internal argument handlers
+        $this->customArgumentHandler["PARAMETERS"] = function($key, $value) {
+            if(is_string($value)) {
+                $value = preg_replace_callback("/%(.*?)%/", function($ms) {
+                    $par = $this->getParameter($ms[1], $contained);
+                    if($contained)
+                        return $par;
+
+                    trigger_error("Parameter $ms[0] not set", E_USER_WARNING);
+                    return "%$ms[1]%";
+                }, $value);
+            }
+            return $value;
+        };
+
+        $this->customArgumentHandler["SERVICES"] = function($key, $value) {
+            if(is_string($value) && preg_match("/^\\$([a-z_][a-z_0-9]*)$/i", $value, $ms)) {
+                $name = $ms[1];
+                if($this->serviceExists($name))
+                    return $this->get($name);
+            }
+            return $value;
+        };
 
         foreach($initializeOnLoad as $serviceName)
             $this->get($serviceName);
@@ -311,6 +337,35 @@ class ServiceManager
         return NULL;
     }
 
+    /**
+     * Adds a custom handler that is called when using mapArray
+     *
+     * Basically the argument handlers SERVICES and PARAMETERS are already registered.
+     *
+     * @param callable $callback
+     * @param string $name
+     * @see ServiceManager::mapArray()
+     */
+    public function addCustomArgumentHandler(callable $callback, string $name) {
+        $this->customArgumentHandler[$name] = $callback;
+    }
+
+    /**
+     * @param string $name
+     * @return callable|null
+     */
+    public function getCustomArgumentHandler(string $name): ?callable {
+        return $this->customArgumentHandler[$name] ?? NULL;
+    }
+
+    /**
+     * Influence the order of the custom argument handlers
+     * @param callable $orderCallback
+     * @return bool
+     */
+    public function orderCustomArgumentHandlers(callable $orderCallback) {
+        return sort($this->customArgumentHandler, $orderCallback);
+    }
 
     /**
      * Maps a given array into and resolves all markers /^\\$([a-zA-Z_][a-zA-Z_0-9]*)$/
@@ -347,22 +402,7 @@ class ServiceManager
      */
     private function _getMapValueHandler() {
         return function($key, $value) {
-            if(is_string($value)) {
-                $value = preg_replace_callback("/%(.*?)%/", function($ms) {
-                    $par = $this->getParameter($ms[1], $contained);
-                    if($contained)
-                        return $par;
 
-                    trigger_error("Parameter $ms[0] not set", E_USER_WARNING);
-                    return "%$ms[1]%";
-                }, $value);
-            }
-
-            if(is_string($value) && preg_match("/^\\$([a-z_][a-z_0-9]*)$/i", $value, $ms)) {
-                $name = $ms[1];
-                if($this->serviceExists($name))
-                    return $this->get($name);
-            }
             return $value;
         };
     }
