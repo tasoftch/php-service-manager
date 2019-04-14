@@ -319,7 +319,7 @@ class ServiceManager
      * @param bool $recursive
      * @return iterable
      */
-    public function mapArray( $array, bool $recursive = false): array {
+    public function mapArray( $array, bool $recursive = false) {
         $handler = $this->_getMapValueHandler();
         $mapper = $recursive ? new RecursiveCallbackMapper($handler) : new CallbackMapper($handler);
         $mapping = new CollectionMapping($mapper);
