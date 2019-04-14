@@ -23,7 +23,6 @@
 
 namespace TASoft\Service;
 
-use TASoft\Collection\AbstractCollection;
 use TASoft\Collection\Mapping\CallbackMapper;
 use TASoft\Collection\Mapping\CollectionMapping;
 use TASoft\Collection\Mapping\RecursiveCallbackMapper;
@@ -393,7 +392,7 @@ class ServiceManager
         }
 
         if($arguments)
-            $arguments = $this->mapArray( AbstractCollection::makeArray( $arguments ), true);
+            $arguments = $this->mapArray($arguments, true);
 
         if(in_array(StaticConstructorServiceInterface::class, $implInterfaces)) {
             $instance = new $className($arguments, $this);
@@ -409,7 +408,7 @@ class ServiceManager
         }
 
         if($configuration && method_exists($instance, 'setConfiguration')) {
-            $configuration = $this->mapArray( AbstractCollection::makeArray( $configuration ) );
+            $configuration = $this->mapArray($configuration);
             $instance->setConfiguration($configuration);
         }
 
