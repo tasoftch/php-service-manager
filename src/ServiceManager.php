@@ -402,7 +402,12 @@ class ServiceManager
      */
     private function _getMapValueHandler() {
         return function($key, $value) {
-
+            foreach($this->customArgumentHandler as $name => $callable) {
+                if(is_callable($callable)) {
+                    $value = $callable($key, $value);
+                } else
+                    trigger_error("Custom argument handler $name is not callable", E_USER_WARNING);
+            }
             return $value;
         };
     }
