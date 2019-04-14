@@ -405,11 +405,11 @@ class ServiceManager
             }
             $instance = new $className(...$args);
         } else {
-            $instance = $arguments ? new $className(...$arguments) : new $className();
+            $instance = $arguments ? new $className(...array_values($arguments)) : new $className();
         }
 
         if($configuration && method_exists($instance, 'setConfiguration')) {
-            $configuration = $this->mapArray( AbstractCollection::makeArray( $configuration ));
+            $configuration = $this->mapArray( $configuration );
             $instance->setConfiguration($configuration);
         }
 
