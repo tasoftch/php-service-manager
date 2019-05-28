@@ -23,6 +23,8 @@
 
 namespace TASoft\Service;
 
+use Closure;
+use Generator;
 use TASoft\Collection\AbstractCollection;
 use TASoft\Collection\Mapping\CallbackMapper;
 use TASoft\Collection\Mapping\CollectionMapping;
@@ -67,6 +69,7 @@ class ServiceManager
     /**
      * Returns the service manager. The first call of this method should pass a service config info.
      * @param iterable|NULL $serviceConfig
+     * @param array $selfRefNames   String names for referencing service manager
      * @return ServiceManager
      */
     public static function generalServiceManager(Iterable $serviceConfig = NULL, $selfRefNames= []) {
@@ -398,7 +401,7 @@ class ServiceManager
 
     /**
      * Creates the replacement handler for parameters and service instances
-     * @return \Closure
+     * @return Closure
      */
     private function _getMapValueHandler() {
         return function($key, $value) {
@@ -533,7 +536,7 @@ class ServiceManager
      * @param array $classNames
      * @param bool $includeSubclasses
      * @param bool $forceClassDetection
-     * @return \Generator
+     * @return Generator
      */
     public function yieldServices(array $serviceNames, array $classNames, bool $includeSubclasses = true, bool $forceClassDetection = true) {
 

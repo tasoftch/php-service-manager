@@ -32,6 +32,7 @@ use TASoft\Service\Exception\FileNotFoundException;
 use TASoft\Service\Exception\InvalidServiceException;
 use TASoft\Service\Exception\ServiceException;
 use TASoft\Service\ServiceManager;
+use Throwable;
 
 class ConfiguredServiceContainer extends AbstractContainer
 {
@@ -137,7 +138,7 @@ class ConfiguredServiceContainer extends AbstractContainer
             if($instance instanceof ContainerInterface)
                 return $instance;
             throw new ServiceException("Class $containerClass does not implement ". ContainerInterface::class, 893);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $e = new BadContainerException($e->getMessage(), $e->getCode(), $e);
             $e->setServiceName($this->serviceName);
             $e->setContainer(NULL);

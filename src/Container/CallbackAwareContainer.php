@@ -24,45 +24,22 @@
 namespace TASoft\Service\Container;
 
 
-/**
- * @inheritdoc
- * @package TASoft\Service
- */
-abstract class AbstractContainer implements ContainerInterface {
-    /**
-     * The singleton instance
-     * @var object
-     */
-    protected $instance;
+class CallbackAwareContainer extends CallbackContainer implements ServiceAwareContainerInterface
+{
+    /** @var string */
+    private $serviceClass;
 
-    /**
-     * Implement this method to finally load the service instance from configuration, environment or what else.
-     * After this method call, the instance property of the factory object should hold the service instance.
-     * @return void|object
-     */
-    abstract protected function loadInstance();
-
-
-    /**
-     * The default implementation checks if the instance already was loaded, if not, it will load it, store it and return.
-     * @return object
-     * @see AbstractContainer::loadInstanceIfNeeded()
-     * @see AbstractContainer::loadInstance()
-     */
-    public function getInstance() {
-        if(!$this->isInstanceLoaded()) {
-            $inst = $this->loadInstance();
-            if(!$this->instance)
-                $this->instance = $inst;
-        }
-		return $this->instance;
-	}
-
-    /**
-     * @inheritDoc
-     */
-    public function isInstanceLoaded(): bool
+    public function __construct(callable $callback, string $serviceClass)
     {
-        return $this->instance ? true : false;
+        parent::__construct($callback);
+        $this->serviceClass = $serviceClass;
+    }
+
+    /**
+     * @return string
+     */
+    public function getServiceClass(): string
+    {
+        return $this->serviceClass;
     }
 }

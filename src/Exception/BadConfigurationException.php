@@ -3,13 +3,15 @@
 namespace TASoft\Service\Exception;
 
 
+use ArrayAccess;
+
 class BadConfigurationException extends InvalidServiceException
 {
-    /** @var array|iterable|\ArrayAccess */
+    /** @var array|iterable|ArrayAccess */
     private $configuration;
 
     /**
-     * @return array|\ArrayAccess|iterable
+     * @return array|ArrayAccess|iterable
      */
     public function getConfiguration()
     {
@@ -17,7 +19,7 @@ class BadConfigurationException extends InvalidServiceException
     }
 
     /**
-     * @param array|\ArrayAccess|iterable $configuration
+     * @param array|ArrayAccess|iterable $configuration
      */
     public function setConfiguration($configuration): void
     {

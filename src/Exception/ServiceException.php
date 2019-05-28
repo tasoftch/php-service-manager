@@ -24,7 +24,9 @@
 namespace TASoft\Service\Exception;
 
 
-class ServiceException extends \RuntimeException
+use RuntimeException;
+
+class ServiceException extends RuntimeException
 {
     /** @var string */
     private $serviceName;
