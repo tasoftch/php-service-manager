@@ -569,14 +569,16 @@ class ServiceManager
      * @return Generator
      */
     public function yieldServices(array $serviceNames, array $classNames, bool $includeSubclasses = true, bool $forceClassDetection = true) {
-        if($inter = array_intersect($serviceNames, $this->getSelfReferenceNames())) {
+        if($classNames) {
+            foreach($classNames as $className) {
+                if($this instanceof $className)
+                    yield $this->getSelfReferenceNames()[0] ?? "serviceManager" => new ServicePromise(function() { return $this; });
+            }
+        } elseif($inter = array_intersect($serviceNames, $this->getSelfReferenceNames())) {
             $serviceName = $inter[0];
             yield $serviceName => new ServicePromise(function() { return $this; });
         }
-        foreach($classNames as $className) {
-            if($this instanceof $className)
-                yield $this->getSelfReferenceNames()[0] ?? "serviceManager" => new ServicePromise(function() { return $this; });
-        }
+
 
         $matchClass = function($className) use ($includeSubclasses, $classNames) {
             if(in_array($className, $classNames))

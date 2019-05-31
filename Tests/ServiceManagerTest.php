@@ -379,6 +379,10 @@ class ServiceManagerTest extends TestCase
             'fileService'
         ], array_keys($sm->getServices(['fileService'], [MockService::class], ServiceManager::OPTION_RETURN_PROMISES | ServiceManager::OPTION_FORCE_CLASS_DETECTION )));
 
+        $this->assertEquals([
+            'directService',
+        ], array_keys($sm->getServices([], [MockService::class], ServiceManager::OPTION_RETURN_PROMISES | ServiceManager::OPTION_FORCE_CLASS_DETECTION )));
+
         $this->assertFalse($sm->isServiceLoaded("directService"));
         // Must load containeredService because no type specifier was set
         $this->assertTrue($sm->isServiceLoaded("containeredService"));
