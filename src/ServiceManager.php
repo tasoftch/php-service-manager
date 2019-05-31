@@ -66,6 +66,12 @@ class ServiceManager
         "SERVICES"
     ];
 
+
+    const OPTION_RECURSIVE_SUBCLASS_SEARCH = 1 << 0;
+    const OPTION_FORCE_CLASS_DETECTION = 1<<1;
+    const OPTION_RETURN_PROMISES = 1<<2;
+
+
     /**
      * Returns the service manager. The first call of this method should pass a service config info.
      * @param iterable|NULL $serviceConfig
@@ -531,6 +537,7 @@ class ServiceManager
 
     /**
      * Yields all services that match required service names or required class names.
+     * This method yields service promises!
      *
      * @param array $serviceNames
      * @param array $classNames
@@ -539,6 +546,14 @@ class ServiceManager
      * @return Generator
      */
     public function yieldServices(array $serviceNames, array $classNames, bool $includeSubclasses = true, bool $forceClassDetection = true) {
+        if($inter = array_intersect($serviceNames, $this->getSelfReferenceNames())) {
+            $serviceName = $inter[0];
+            yield $serviceName => new ServicePromise(function() { return $this; });
+        }
+        foreach($classNames as $className) {
+            if($this instanceof $className)
+                yield $this->getSelfReferenceNames()[0] ?? "serviceManager" => new ServicePromise(function() { return $this; });
+        }
 
         $matchClass = function($className) use ($includeSubclasses, $classNames) {
             if(in_array($className, $classNames))
@@ -563,10 +578,22 @@ class ServiceManager
         }
     }
 
-    public function getServices(array $serviceNames, array $classNames, bool $includeSubclasses = true, bool $forceClassDetection = true) {
+    /**
+     * Searches for available services
+     *
+     * @param array $serviceNames
+     * @param array $classNames
+     * @param int $options
+     * @return array
+     */
+    public function getServices(array $serviceNames, array $classNames = [], int $options = self::OPTION_RETURN_PROMISES|self::OPTION_RECURSIVE_SUBCLASS_SEARCH|self::OPTION_FORCE_CLASS_DETECTION) {
         $services = [];
-        foreach($this->yieldServices($serviceNames, $classNames, $includeSubclasses, $forceClassDetection) as $name => $service) {
-            $services[$name] = $service;
+        /**
+         * @var string $name
+         * @var ServicePromise $service
+         */
+        foreach($this->yieldServices($serviceNames, $classNames, $options & self::OPTION_RECURSIVE_SUBCLASS_SEARCH, $options & self::OPTION_FORCE_CLASS_DETECTION) as $name => $service) {
+            $services[$name] = $options & self::OPTION_RETURN_PROMISES ? $service : $service->getInstance();
         }
         return $services;
     }
