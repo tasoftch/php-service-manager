@@ -263,6 +263,29 @@ class ServiceManager
     }
 
     /**
+     * Checks if a service exists
+     * @param $name
+     * @return bool
+     */
+    public function __isset($name)
+    {
+        return $this->serviceExists($name);
+    }
+
+    /**
+     * Removes a service
+     * @param $name
+     */
+    public function __unset($name)
+    {
+        if(($idx = array_search($name, $this->selfReferenceNames)) !== false)
+            unset($this->selfReferenceNames[$idx]);
+        elseif(isset($this->serviceData[$name])) {
+            unset($this->serviceData[$name]);
+        }
+    }
+
+    /**
      * Looks, if a service with the given name is available
      * @param string $serviceName
      * @return bool
