@@ -24,6 +24,8 @@
 namespace TASoft\Service;
 
 
+use TASoft\Service\Exception\UnknownServiceException;
+
 /**
  * The forwarder trait extends any class to direct property access to services
  * @package TASoft\Service
@@ -57,6 +59,21 @@ trait ServiceForwarderTrait
         $sm = $this->getServiceManager();
         if($sm) {
             $sm->set($serviceName, $object);
+        }
+    }
+
+    /**
+     * Returns service if exist
+     *
+     * @param $serviceName
+     * @return object|null
+     */
+    public function get($serviceName) {
+        try {
+            $sm = $this->getServiceManager();
+            return $sm->get($serviceName);
+        } catch (UnknownServiceException $exception) {
+            return NULL;
         }
     }
 }
