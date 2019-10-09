@@ -486,7 +486,7 @@ class ServiceManager
         }
 
         if($configuration && method_exists($instance, 'setConfiguration')) {
-            $configuration = $this->mapArray( $configuration );
+            $configuration = $this->mapArray( $configuration, true);
             $instance->setConfiguration($configuration);
         }
 
