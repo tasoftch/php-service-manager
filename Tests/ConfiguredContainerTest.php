@@ -31,6 +31,7 @@
 use PHPUnit\Framework\TestCase;
 use TASoft\Service\Config\AbstractFileConfiguration;
 use TASoft\Service\Container\AbstractContainer;
+use TASoft\Service\Container\ServiceAwareContainerInterface;
 use TASoft\Service\ServiceManager;
 
 class ConfiguredContainerTest extends TestCase
@@ -64,11 +65,71 @@ class ConfiguredContainerTest extends TestCase
 
         $this->assertInstanceOf(MockService::class, $sm->get("myService"));
     }
+
+    public function testClassCheck() {
+        $sm = new ServiceManager([
+            'myService' => [
+                AbstractFileConfiguration::SERVICE_CONTAINER => MyContainer::class
+            ]
+        ]);
+
+        MyContainer::$didLoad = false;
+
+        $this->assertEquals(stdClass::class, $sm->getServiceClass("myService"));
+
+        $this->assertTrue(MyContainer::$didLoad);
+    }
+
+    public function testAwareCheck() {
+        $sm = new ServiceManager([
+            'myService' => [
+                AbstractFileConfiguration::SERVICE_CONTAINER => MyAwareContainer::class
+            ]
+        ]);
+
+        MyAwareContainer::$didLoad = false;
+        $this->assertEquals(MyAwareContainer::class, $sm->getServiceClass("myService"));
+
+        $this->assertFalse(MyAwareContainer::$didLoad);
+    }
+
+    public function testConfiguredAwareService() {
+        $sm = new ServiceManager([
+            'myService' => [
+                AbstractFileConfiguration::SERVICE_CONTAINER => MyContainer::class,
+                AbstractFileConfiguration::CONFIG_SERVICE_TYPE_KEY => stdClass::class
+            ]
+        ]);
+
+        MyContainer::$didLoad = false;
+
+        $this->assertEquals(stdClass::class, $sm->getServiceClass("myService"));
+
+        $this->assertFalse(MyContainer::$didLoad);
+    }
 }
 
 class MyContainer extends AbstractContainer {
+    public static $didLoad = false;
+
     protected function loadInstance()
     {
+        self::$didLoad = true;
         return new stdClass();
+    }
+}
+
+class MyAwareContainer extends AbstractContainer implements ServiceAwareContainerInterface {
+    public static $didLoad = false;
+
+    protected function loadInstance()
+    {
+        self::$didLoad = true;
+        return $this;
+    }
+
+    public function getServiceClass(): string
+    {
+        return self::class;
     }
 }

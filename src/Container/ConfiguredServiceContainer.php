@@ -34,7 +34,7 @@ use TASoft\Service\Exception\ServiceException;
 use TASoft\Service\ServiceManager;
 use Throwable;
 
-class ConfiguredServiceContainer extends AbstractContainer
+class ConfiguredServiceContainer extends AbstractContainer implements ServiceAwareContainerInterface
 {
     use ConfigurableTrait;
 
@@ -205,6 +205,31 @@ class ConfiguredServiceContainer extends AbstractContainer
             $e->setFilename($file);
             throw $e;
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getServiceClass(): string
+    {
+        if($this->isInstanceLoaded())
+            return get_class( $this->instance );
+
+        if($class = $this->getConfiguration()[ AbstractFileConfiguration::SERVICE_CLASS ] ?? NULL)
+            return $class;
+
+        if($class = $this->getConfiguration()[ AbstractFileConfiguration::CONFIG_SERVICE_TYPE_KEY ] ?? NULL)
+            return $class;
+
+        if(isset($this->getConfiguration()[AbstractFileConfiguration::SERVICE_CONTAINER]) && !$this->isIntermediateInstanceLoaded()) {
+            $this->containerInstance = $this->loadIntermediateContainerInstance( $this->getConfiguration()[ AbstractFileConfiguration::SERVICE_CONTAINER ] );
+        }
+
+        if($this->containerInstance instanceof ServiceAwareContainerInterface)
+            return $this->containerInstance->getServiceClass();
+
+        $this->loadInstance();
+        return get_class($this->instance);
     }
 }
 

@@ -526,21 +526,9 @@ class ServiceManager
                     goto finish;
                 }
 
-                if($container instanceof ServiceAwareContainerInterface) {
-                    $this->serviceClassNames[$serviceName] = $container->getServiceClass();
+                if($container instanceof ServiceAwareContainerInterface && ( $serviceClass = $container->getServiceClass() )) {
+                    $this->serviceClassNames[$serviceName] = $serviceClass;
                     goto finish;
-                } elseif($container instanceof ConfiguredServiceContainer) {
-                    $cfg = $container->getConfiguration();
-                    // In case of a direct instance fonciguration, get this classname
-                    if($cn = $cfg[AbstractFileConfiguration::SERVICE_CLASS] ?? NULL) {
-                        $this->serviceClassNames[$serviceName] = $cn;
-                        goto finish;
-
-                    } elseif($cn = $cfg[AbstractFileConfiguration::CONFIG_SERVICE_TYPE_KEY] ?? NULL) {
-                        // If the developer defined the class by configuration in case of container or file initialisation, use this.
-                        $this->serviceClassNames[$serviceName] = $cn;
-                        goto finish;
-                    }
                 }
 
                 // If nothing worked before, finally load the instance
