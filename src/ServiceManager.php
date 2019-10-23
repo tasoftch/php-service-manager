@@ -119,6 +119,11 @@ class ServiceManager
         // Load internal argument handlers
         $this->customArgumentHandler["PARAMETERS"] = function($key, $value) {
             if(is_string($value)) {
+                // If is parameter only string, replace the whole placeholder
+                if(preg_match("/^%(.*?)%$/i", $value, $ms)) {
+                    return $this->getParameter( $ms[1] );
+                }
+                // If the parameter is a part of a string, then replace it.
                 $value = preg_replace_callback("/%(.*?)%/", function($ms) {
                     $par = $this->getParameter($ms[1], $contained);
                     if($contained)
