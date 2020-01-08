@@ -27,7 +27,7 @@ namespace TASoft\Service;
  * Use this interface for services that know about their construction method signature
  * @package TASoft\Service
  */
-interface ConstructorAwareServiceInterface
+interface ConstructorAwareServiceInterface extends ServiceInterface
 {
     /**
      * Provide an array with the constructor arguments.

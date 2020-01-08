@@ -28,7 +28,7 @@ namespace TASoft\Service;
  *
  * @package TASoft\Service
  */
-interface ConfigurableServiceInterface
+interface ConfigurableServiceInterface extends ServiceInterface
 {
     /**
      * Sets the configuration

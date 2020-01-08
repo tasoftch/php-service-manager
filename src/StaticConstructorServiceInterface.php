@@ -27,7 +27,7 @@ namespace TASoft\Service;
  * Service classes implementing this method are created calling the constructor with this signature
  * @package TASoft\Service
  */
-interface StaticConstructorServiceInterface
+interface StaticConstructorServiceInterface extends ServiceInterface
 {
     public function __construct($arguments = NULL, ServiceManager $serviceManager = NULL);
 }

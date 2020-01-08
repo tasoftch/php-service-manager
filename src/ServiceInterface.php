@@ -24,11 +24,10 @@
 namespace TASoft\Service;
 
 /**
- * If a service implements this interface, the service manager tries to inject requested constructor arguments
- * resolving from type hinting and names
- *
+ * Marks a class that its instance is a service
  * @package TASoft\Service
  */
-interface DynamicConstructorServiceInterface extends ServiceInterface
+interface ServiceInterface
 {
+    const SERVICE_NAME = '';
 }
