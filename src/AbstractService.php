@@ -23,10 +23,8 @@
 
 namespace TASoft\Service;
 
-/**
- * Marks a class that its instance is a service
- * @package TASoft\Service
- */
-interface ServiceInterface
+
+class AbstractService implements ServiceInterface
 {
+    const SERVICE_NAME = '';
 }
