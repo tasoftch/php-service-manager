@@ -14,8 +14,8 @@
   },
   "require" : {
     "php": "^7.2",
-    "tasoft/collection": "dev-master",
-    "tasoft/method-signature": "dev-master"
+    "tasoft/collection": "^1.0",
+    "tasoft/method-signature": "^0.8"
   },
   "require-dev": {
     "phpunit/phpunit": "^6"
