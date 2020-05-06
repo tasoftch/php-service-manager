@@ -229,7 +229,7 @@ class ConfiguredServiceContainer extends AbstractContainer implements ServiceAwa
             return $this->containerInstance->getServiceClass();
 
         $this->loadInstance();
-        return get_class($this->instance);
+        return is_object($this->instance) ? get_class($this->instance) : '';
     }
 }
 
