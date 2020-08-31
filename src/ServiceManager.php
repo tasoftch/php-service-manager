@@ -50,7 +50,10 @@ use TASoft\Service\Exception\UnknownServiceException;
  */
 class ServiceManager implements ServiceManagerInterface
 {
-    private static $serviceManager;
+	const PARAM_INITIALIZED_FILE = './service-management.initial-file.php';
+
+
+	private static $serviceManager;
     private static $globalVariableName = "SERVICES";
 
     private $serviceData = [];
@@ -108,10 +111,10 @@ class ServiceManager implements ServiceManagerInterface
 	 */
     public function __construct(Iterable $config = []) {
         $initializeOnLoad = [];
-        $this->setParameter('sm.initial.file', static::PARAM_INITIALIZED_FILE);
+        $this->setParameter('sm.initial.file', $pf = $this->getRegisteredServicePersistentFile());
 
-        if(is_file(static::PARAM_INITIALIZED_FILE)) {
-        	$this->registeredServices = (require static::PARAM_INITIALIZED_FILE) ?: [];
+        if(is_file($pf)) {
+        	$this->registeredServices = (require $pf) ?: [];
 		}
 
         foreach($config as $serviceName => $serviceConfig) {
@@ -192,7 +195,16 @@ class ServiceManager implements ServiceManagerInterface
         return array_keys($this->serviceData);
     }
 
-    /**
+	/**
+	 * @inheritDoc
+	 */
+	public function getRegisteredServicePersistentFile(): string
+	{
+		return static::PARAM_INITIALIZED_FILE;
+	}
+
+
+	/**
      * You may directly request a service instance. If it does not exist, the request returns NULL
      *
      *

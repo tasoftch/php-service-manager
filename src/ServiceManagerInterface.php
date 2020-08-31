@@ -32,8 +32,6 @@ use TASoft\Service\Exception\UnknownServiceException;
 
 interface ServiceManagerInterface
 {
-	const PARAM_INITIALIZED_FILE = './service-management.initial-file.php';
-
 	/**
 	 * Returns the service manager. The first call of this method should pass a service config info.
 	 * @param iterable|NULL $serviceConfig
@@ -129,6 +127,13 @@ interface ServiceManagerInterface
 	 * @return mixed|null
 	 */
 	public function getParameter(string $name, bool &$contained = NULL);
+
+	/**
+	 * Gets the filename where to store the installed service names.
+	 *
+	 * @return string
+	 */
+	public function getRegisteredServicePersistentFile(): string;
 
 	/**
 	 * Unregistering a service will invoke its probably defined uninstall method and removes from installed services.
