@@ -48,7 +48,7 @@ use TASoft\Service\Exception\UnknownServiceException;
  *
  * @package TASoft\Service
  */
-class ServiceManager
+class ServiceManager implements ServiceManagerInterface
 {
     private static $serviceManager;
     private static $globalVariableName = "SERVICES";
@@ -73,10 +73,7 @@ class ServiceManager
 
 
     /**
-     * Returns the service manager. The first call of this method should pass a service config info.
-     * @param iterable|NULL $serviceConfig
-     * @param array $selfRefNames   String names for referencing service manager
-     * @return ServiceManager
+     * @inheritDoc
      */
     public static function generalServiceManager(Iterable $serviceConfig = NULL, $selfRefNames= []) {
         if(!static::$serviceManager) {
@@ -93,12 +90,19 @@ class ServiceManager
         return static::$serviceManager;
     }
 
+	/**
+	 * @inheritDoc
+	 */
     public static function rejectGeneralServiceManager() {
         static::$serviceManager = NULL;
         if($n = self::getGlobalVariableName())
             unset($GLOBALS[$n]);
     }
 
+	/**
+	 * ServiceManager constructor.
+	 * @param array|iterable $config
+	 */
     public function __construct(Iterable $config = []) {
         $initializeOnLoad = [];
 
@@ -166,8 +170,7 @@ class ServiceManager
     }
 
     /**
-     * Returns a list with all available services
-     * @return array
+     * @inheritDoc
      */
     public function getAvailableServices() {
         return array_keys($this->serviceData);
@@ -191,12 +194,7 @@ class ServiceManager
 
 
     /**
-     * Returns the instance of a requested service
-     * This method call fails if the service does not exist or something else went wrong during creating the service instance.
-     *
-     * @param string $serviceName
-     * @return object|null
-     * @throws UnknownServiceException
+     * @inheritDoc
      */
     public function get($serviceName) {
         $container = $this->serviceData[$serviceName] ?? NULL;
@@ -225,22 +223,7 @@ class ServiceManager
     }
 
     /**
-     * Sets a service
-     *
-     * Accepted are:
-     * - Objects that implement ContainerInterface, their getInstance method call will be the service instance
-     * - A callback (note! Objects implementing __invoke are also callbacks!) to obtain the service instance
-     * - An array to load configured service
-     * - Any other object directly as service
-     *
-     * If replaceExistingServices() returns false, this method call fails with an already registered service.
-     *
-     *
-     * @param string $serviceName
-     * @param object|callable|ContainerInterface $object
-     * @throws ServiceException
-     * @see ServiceManager::replaceExistingServices()
-     * @see ServiceManager::__get()
+     * @inheritDoc
      */
     public function set(string $serviceName, $object) {
         if(isset($this->serviceData[$serviceName]) || in_array($serviceName, $this->getSelfReferenceNames())) {
@@ -291,19 +274,14 @@ class ServiceManager
     }
 
     /**
-     * Looks, if a service with the given name is available
-     * @param string $serviceName
-     * @return bool
+     * @inheritDoc
      */
     public function serviceExists(string $serviceName): bool {
         return isset($this->serviceData[$serviceName]) || in_array($serviceName, $this->getSelfReferenceNames()) ? true : false;
     }
 
     /**
-     * Looks, if a service with the given name is available and already is loaded.
-     * @param string $serviceName
-     * @return bool
-     * @see ServiceManager::serviceExists()
+     * @inheritDoc
      */
     public function isServiceLoaded(string $serviceName): bool {
         if($this->serviceExists($serviceName)) {
@@ -336,18 +314,7 @@ class ServiceManager
     }
 
     /**
-     * Parameters can be dynamic markers in the configuration that are resolved right before the service instance is required.
-     * @example Config [
-     *      AbstractFileConfiguration::SERVICE_CLASS            => MySQL::class,
-     *      AbstractFileConfiguration::SERVICE_INIT_ARGUMENTS   => [
-     *          'host' => 'localhost',
-     *          'dbname' => '%dataBaseName%'
-     *      ]
-     * ]
-     * This configuration is valid and the %dataBaseName% parameter placeholder gets replaced by the parameter entry on service instance initialisation.
-     *
-     * @param string $paramName
-     * @param null $paramValue
+     * @inheritDoc
      */
     public function setParameter(string $paramName, $paramValue = NULL) {
         if($paramName) {
@@ -359,11 +326,7 @@ class ServiceManager
     }
 
     /**
-     * Returns the requested parameter value. If not set, the $contained argument is set to false, otherwise true
-     *
-     * @param string $name
-     * @param bool $contained
-     * @return mixed|null
+     * @inheritDoc
      */
     public function getParameter(string $name, bool &$contained = NULL) {
         if(isset($this->parameters[$name])) {
