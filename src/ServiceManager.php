@@ -105,6 +105,7 @@ class ServiceManager implements ServiceManagerInterface
 	 */
     public function __construct(Iterable $config = []) {
         $initializeOnLoad = [];
+        $this->setParameter('sm.initial.file', static::PARAM_INITIALIZED_FILE);
 
         foreach($config as $serviceName => $serviceConfig) {
             if(!is_iterable($serviceConfig)) {
