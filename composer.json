@@ -13,7 +13,7 @@
     }
   },
   "require" : {
-    "php": "^7.2",
+    "php": ">=7.2",
     "tasoft/collection": "^1.0",
     "tasoft/method-signature": "^0.8"
   },
@@ -21,6 +21,6 @@
     "phpunit/phpunit": "^6"
   },
   "suggest": {
-    "tasoft/dependency-injection": "dev-master"
+    "tasoft/dependency-injection": "^1.0"
   }
 }

@@ -33,7 +33,6 @@ use TASoft\Service\Config\AbstractFileConfiguration;
 use TASoft\Service\ConstructorAwareServiceInterface;
 use TASoft\Service\Container\AbstractContainer;
 use TASoft\Service\Container\CallbackContainer;
-use TASoft\Service\Container\ContainerInterface;
 use TASoft\Service\Container\ServiceAwareContainerInterface;
 use TASoft\Service\Container\StaticContainer;
 use TASoft\Service\Exception\BadConfigurationException;
@@ -386,7 +385,7 @@ class ServiceManagerTest extends TestCase
         $this->assertFalse($sm->isServiceLoaded("directService"));
         // Must load containeredService because no type specifier was set
         $this->assertTrue($sm->isServiceLoaded("containeredService"));
-        $this->assertFalse($sm->isServiceLoaded("fileService"));
+        $this->assertTrue($sm->isServiceLoaded("fileService"));
         $this->assertFalse($sm->isServiceLoaded("containeredService2"));
         $this->assertTrue($sm->isServiceLoaded("loadedService"));
         $this->assertFalse($sm->isServiceLoaded("awareContaineredService"));
