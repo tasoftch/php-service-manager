@@ -66,6 +66,9 @@ class ServiceManager implements ServiceManagerInterface
         "SERVICES"
     ];
 
+    private $registeredServices = [];
+    private $registeredServicesChanges = false;
+
 
     const OPTION_RECURSIVE_SUBCLASS_SEARCH = 1 << 0;
     const OPTION_FORCE_CLASS_DETECTION = 1<<1;
@@ -106,6 +109,10 @@ class ServiceManager implements ServiceManagerInterface
     public function __construct(Iterable $config = []) {
         $initializeOnLoad = [];
         $this->setParameter('sm.initial.file', static::PARAM_INITIALIZED_FILE);
+
+        if(is_file(static::PARAM_INITIALIZED_FILE)) {
+        	$this->registeredServices = (require static::PARAM_INITIALIZED_FILE) ?: [];
+		}
 
         foreach($config as $serviceName => $serviceConfig) {
             if(!is_iterable($serviceConfig)) {
@@ -154,7 +161,15 @@ class ServiceManager implements ServiceManagerInterface
             $this->get($serviceName);
     }
 
-    /**
+    public function __destruct()
+	{
+		if($this->registeredServicesChanges) {
+			$d = var_export( serialize( $this->registeredServices ), true);
+			file_put_contents( $this->getParameter('sm.initial.file'), "<?php\nreturn unserialize($d);" );
+		}
+	}
+
+	/**
      * @return string
      */
     public static function getGlobalVariableName(): string
@@ -200,7 +215,14 @@ class ServiceManager implements ServiceManagerInterface
     public function get($serviceName) {
         $container = $this->serviceData[$serviceName] ?? NULL;
         if($container) {
-            return $container->getInstance();
+        	$s = $container->getInstance();
+        	if(!in_array($serviceName, $this->registeredServices)) {
+        		$this->registeredServices[] = $serviceName;
+        		$this->registeredServicesChanges = true;
+        		if($s instanceof RegistryServiceInterface)
+        			$s->installService($this);
+			}
+            return $s;
         }
 
         if(in_array($serviceName, $this->getSelfReferenceNames()))
@@ -579,4 +601,20 @@ class ServiceManager implements ServiceManagerInterface
         }
         return $services;
     }
+
+	/**
+	 * @inheritDoc
+	 */
+	public function unregisterService(string $serviceName)
+	{
+		if(in_array($serviceName, $this->registeredServices) && ($service = $this->__get($serviceName))) {
+			if($service instanceof RegistryServiceInterface)
+				$service->uninstallService($this);
+
+			if(($idx = array_search($serviceName, $this->registeredServices)) !== false) {
+				unset($this->registeredServices[$idx]);
+				$this->registeredServicesChanges = true;
+			}
+		}
+	}
 }

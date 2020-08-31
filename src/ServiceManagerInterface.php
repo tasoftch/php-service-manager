@@ -129,4 +129,11 @@ interface ServiceManagerInterface
 	 * @return mixed|null
 	 */
 	public function getParameter(string $name, bool &$contained = NULL);
+
+	/**
+	 * Unregistering a service will invoke its probably defined uninstall method and removes from installed services.
+	 *
+	 * @param string $serviceName
+	 */
+	public function unregisterService(string $serviceName);
 }

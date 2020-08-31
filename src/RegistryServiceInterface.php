@@ -41,5 +41,13 @@ interface RegistryServiceInterface extends ServiceInterface
 	 *
 	 * @param ServiceManagerInterface $serviceManager
 	 */
-	public function initializeService(ServiceManagerInterface $serviceManager);
+	public function installService(ServiceManagerInterface $serviceManager);
+
+	/**
+	 * This method gets called if the service definitively should be removed from the application.
+	 * All stuff the service required must be removed and undone by this method.
+	 *
+	 * @param ServiceManagerInterface $serviceManager
+	 */
+	public function uninstallService(ServiceManagerInterface $serviceManager);
 }
