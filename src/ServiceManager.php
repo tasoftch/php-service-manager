@@ -53,8 +53,8 @@ class ServiceManager implements ServiceManagerInterface
 	const PARAM_INITIALIZED_FILE = './service-management.initial-file.php';
 
 
-	private static $serviceManager;
-    private static $globalVariableName = "SERVICES";
+	protected static $serviceManager;
+    protected static $globalVariableName = "SERVICES";
 
     private $serviceData = [];
     private $parameters = [];
