@@ -168,7 +168,8 @@ class ServiceManager implements ServiceManagerInterface
 	{
 		if($this->registeredServicesChanges) {
 			$d = var_export( serialize( $this->registeredServices ), true);
-			file_put_contents( $this->getParameter('sm.initial.file'), "<?php\nreturn unserialize($d);" );
+			if($f = $this->getParameter('sm.initial.file'))
+				@file_put_contents( $f, "<?php\nreturn unserialize($d);" );
 		}
 	}
 
