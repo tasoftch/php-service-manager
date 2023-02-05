@@ -43,6 +43,6 @@ class CallbackContainerTest extends TestCase
         $this->assertFalse($cbt->isInstanceLoaded());
         $this->assertInstanceOf(stdClass::class, $int = $cbt->getInstance());
 
-        $this->assertAttributeEquals(3, "test", $int);
+        $this->assertEquals(3,  $int->test);
     }
 }

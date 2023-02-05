@@ -36,6 +36,7 @@ use TASoft\Service\Container\CallbackContainer;
 use TASoft\Service\Container\ServiceAwareContainerInterface;
 use TASoft\Service\Container\StaticContainer;
 use TASoft\Service\Exception\BadConfigurationException;
+use TASoft\Service\Exception\ServiceException;
 use TASoft\Service\ServiceManager;
 use TASoft\Service\StaticConstructorServiceInterface;
 
@@ -60,18 +61,14 @@ class ServiceManagerTest extends TestCase
         $this->assertFalse(isset( $GLOBALS["_TEST"] ));
     }
 
-    /**
-     * @expectedException TASoft\Service\Exception\ServiceException
-     */
     public function testInitialFailure() {
+		$this->expectException(ServiceException::class);
         ServiceManager::rejectGeneralServiceManager();
         ServiceManager::generalServiceManager();
     }
 
-    /**
-     * @expectedException TASoft\Service\Exception\BadConfigurationException
-     */
     public function testFailedConfiguration() {
+		$this->expectException(BadConfigurationException::class);
         try {
             $sm = new ServiceManager([
                 AbstractFileConfiguration::SERVICE_CLASS => MockService::class
@@ -86,7 +83,8 @@ class ServiceManagerTest extends TestCase
      * @expectedException TASoft\Service\Exception\BadConfigurationException
      */
     public function testMissingConstructionMethodConfig() {
-        try {
+		$this->expectException(BadConfigurationException::class);
+		try {
             $sm = new ServiceManager([
                 'myService' => [
                     'irelevant' => MockService::class
@@ -121,6 +119,7 @@ class ServiceManagerTest extends TestCase
      * @expectedException TASoft\Service\Exception\ServiceException
      */
     public function testSetExistingService() {
+		$this->expectException(ServiceException::class);
         $sm = new ServiceManager([
             'myService' => [
                 AbstractFileConfiguration::SERVICE_CLASS => MockService::class
@@ -135,6 +134,7 @@ class ServiceManagerTest extends TestCase
      * @expectedException PHPUnit\Framework\Error\Notice
      */
     public function testSetExistingService2() {
+		$this->expectException(\PHPUnit\Framework\Error\Notice::class);
         $sm = new ServiceManager([
             'myService' => [
                 AbstractFileConfiguration::SERVICE_CLASS => MockService::class
@@ -181,6 +181,7 @@ class ServiceManagerTest extends TestCase
      * @expectedException TASoft\Service\Exception\ServiceException
      */
     public function testInvalidServiceInstance() {
+		$this->expectException(ServiceException::class);
         $sm = new ServiceManager([]);
         $sm->testService = 16;
     }
