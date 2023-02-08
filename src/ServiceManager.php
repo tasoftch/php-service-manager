@@ -460,7 +460,7 @@ class ServiceManager implements ServiceManagerInterface
         $instance = NULL;
 
         $implInterfaces = class_implements($className);
-        if(in_array(ConstructorAwareServiceInterface::class, $implInterfaces)) {
+        if(in_array(ConstructorAwareServiceInterface::class, $implInterfaces ?: [])) {
             /** @var ConstructorAwareServiceInterface $className */
             if($args = $className::getConstructorArguments()) {
                 $newArguments = [];
@@ -476,9 +476,9 @@ class ServiceManager implements ServiceManagerInterface
         if($arguments)
             $arguments = $this->mapArray( AbstractCollection::makeArray($arguments), true);
 
-        if(in_array(StaticConstructorServiceInterface::class, $implInterfaces)) {
+        if(in_array(StaticConstructorServiceInterface::class, $implInterfaces ?: [])) {
             $instance = new $className($arguments, $this);
-        } elseif (in_array(DynamicConstructorServiceInterface::class, $implInterfaces)) {
+        } elseif (in_array(DynamicConstructorServiceInterface::class, $implInterfaces ?: [])) {
             $sig = SignatureService::getSignatureService()->getMethodSignature($className, "__construct");
             $args = [];
             foreach($sig as $name => $type) {
